@@ -1,0 +1,63 @@
+
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: #faf8f4;
+  --color-surface: #f2ede3;
+  --color-card: #ffffff;
+  --color-border: #ddd5c6;
+  --color-ink: #2a2f2b;
+  --color-muted: #566058;
+
+  --color-forest: #1f4d3a;
+  --color-forest-hover: #163b2c;
+  --color-sage: #8fa98c;
+  --color-sage-soft: #e3ebdf;
+  --color-sage-dark: #44694f;
+
+  --color-danger: #a23b3f;
+  --color-danger-hover: #8a3033;
+  --color-danger-soft: #f6e4e3;
+  --color-positive: #2f6b46;
+  --color-warning: #7a5a12;
+  --color-warning-soft: #f7efd9;
+}
+
+@layer base {
+  html {
+    font-size: 106.25%;
+  }
+
+  body {
+    background: var(--color-background);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    color: var(--color-forest);
+    line-height: 1.25;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-forest);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
