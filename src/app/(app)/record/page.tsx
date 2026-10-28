@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import {
   ArrowDownLeft,
@@ -9,12 +9,22 @@ import {
   Info,
   Save,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 
+type TransactionType = "income" | "expenditure";
+
+type Category = {
+  id: string;
+  name: string;
+  type: TransactionType;
+  is_active: boolean;
+};
+
 export default function RecordTransactionPage() {
-  const [type, setType] = useState<"income" | "expenditure">("income");
+  const [type, setType] = useState<TransactionType>("income");
   const [date, setDate] = useState(
     new Date().toLocaleDateString("en-CA")
   );
@@ -23,12 +33,121 @@ export default function RecordTransactionPage() {
   const [description, setDescription] = useState("");
   const [reference, setReference] = useState("");
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"success" | "error" | "">("");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCategories() {
+      setCategoriesLoading(true);
+      setCategory("");
+
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name, type, is_active")
+        .eq("type", type)
+        .eq("is_active", true)
+        .order("name");
+
+      if (cancelled) return;
+
+      if (error) {
+        setCategories([]);
+        setMessage("Unable to load categories. Please try again.");
+        setMessageType("error");
+      } else {
+        setCategories((data ?? []) as Category[]);
+        setMessage("");
+        setMessageType("");
+      }
+
+      setCategoriesLoading(false);
+    }
+
+    void loadCategories();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [type]);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage(
-      "This form is a preview. Your transaction has not been saved. Database saving will be connected in a later step."
-    );
+    setMessage("");
+    setMessageType("");
+
+    const numericAmount = Number(amount);
+
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+      setMessage("Enter an amount greater than £0.00.");
+      setMessageType("error");
+      return;
+    }
+
+    if (!category || !categories.some((item) => item.id === category)) {
+      setMessage("Please select an active category.");
+      setMessageType("error");
+      return;
+    }
+
+    if (description.trim().length < 3) {
+      setMessage("Description must contain at least 3 characters.");
+      setMessageType("error");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        setMessage("Your session may have expired. Please sign in again.");
+        setMessageType("error");
+        return;
+      }
+
+      const { error } = await supabase.from("transactions").insert({
+        type,
+        amount: numericAmount,
+        transaction_date: date,
+        category_id: category,
+        description: description.trim(),
+        reference: reference.trim() || null,
+        created_by: user.id,
+      });
+
+      if (error) {
+        console.error("Transaction save failed:", error);
+        setMessage(
+          "The transaction could not be saved. Check your access and entries, then try again."
+        );
+        setMessageType("error");
+        return;
+      }
+
+      setMessage("Transaction saved successfully.");
+      setMessageType("success");
+      setAmount("");
+      setCategory("");
+      setDescription("");
+      setReference("");
+    } catch (error) {
+      console.error("Unexpected transaction save error:", error);
+      setMessage("Something went wrong. Please try again.");
+      setMessageType("error");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -46,13 +165,13 @@ export default function RecordTransactionPage() {
             aria-hidden="true"
           />
           <p className="text-sm text-forest">
-            Preview mode: this form does not save financial records yet.
-            Check your entries before submitting.
+            Enter the transaction details carefully. Saved records are subject
+            to your account permissions.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <fieldset>
+          <fieldset disabled={saving}>
             <legend className="mb-3 font-semibold text-ink">
               Transaction type
             </legend>
@@ -64,6 +183,7 @@ export default function RecordTransactionPage() {
                 onClick={() => {
                   setType("income");
                   setMessage("");
+                  setMessageType("");
                 }}
                 className={`flex min-h-14 items-center justify-center gap-2 rounded-lg border p-3 font-semibold ${
                   type === "income"
@@ -81,6 +201,7 @@ export default function RecordTransactionPage() {
                 onClick={() => {
                   setType("expenditure");
                   setMessage("");
+                  setMessageType("");
                 }}
                 className={`flex min-h-14 items-center justify-center gap-2 rounded-lg border p-3 font-semibold ${
                   type === "expenditure"
@@ -121,10 +242,7 @@ export default function RecordTransactionPage() {
                 step="0.01"
                 required
                 value={amount}
-                onChange={(event) => {
-                  setAmount(event.target.value);
-                  setMessage("");
-                }}
+                onChange={(event) => setAmount(event.target.value)}
                 placeholder="0.00"
                 className="min-h-12 w-full rounded-lg border border-border bg-card px-3"
               />
@@ -139,27 +257,24 @@ export default function RecordTransactionPage() {
               id="transaction-category"
               required
               value={category}
+              disabled={categoriesLoading || saving}
               onChange={(event) => setCategory(event.target.value)}
               className="min-h-12 w-full rounded-lg border border-border bg-card px-3"
             >
-              <option value="">Select a category</option>
-              {type === "income" ? (
-                <>
-                  <option value="Donations">Donations</option>
-                  <option value="Grants">Grants</option>
-                  <option value="Fundraising">Fundraising</option>
-                  <option value="Other income">Other income</option>
-                </>
-              ) : (
-                <>
-                  <option value="Baby supplies">Baby supplies</option>
-                  <option value="Equipment">Equipment</option>
-                  <option value="Rent and utilities">Rent and utilities</option>
-                  <option value="Transport">Transport</option>
-                  <option value="Other expenditure">Other expenditure</option>
-                </>
-              )}
+              <option value="">
+                {categoriesLoading ? "Loading categories..." : "Select a category"}
+              </option>
+              {categories.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
             </select>
+            {!categoriesLoading && categories.length === 0 && (
+              <p className="mt-2 text-sm text-ink">
+                No active categories are available for this transaction type.
+              </p>
+            )}
           </div>
 
           <div>
@@ -197,7 +312,12 @@ export default function RecordTransactionPage() {
           {message && (
             <p
               role="status"
-              className="rounded-lg bg-warning-soft p-4 text-sm text-ink"
+              aria-live="polite"
+              className={`rounded-lg p-4 text-sm ${
+                messageType === "success"
+                  ? "bg-sage-soft text-forest"
+                  : "bg-warning-soft text-ink"
+              }`}
             >
               {message}
             </p>
@@ -210,9 +330,12 @@ export default function RecordTransactionPage() {
               </Button>
             </Link>
 
-            <Button type="submit">
+            <Button
+              type="submit"
+              disabled={saving || categoriesLoading || categories.length === 0}
+            >
               <Save size={18} aria-hidden="true" />
-              Preview submission
+              {saving ? "Saving..." : "Save transaction"}
             </Button>
           </div>
         </form>

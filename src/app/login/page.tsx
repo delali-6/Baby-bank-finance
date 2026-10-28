@@ -8,8 +8,9 @@ import { LockKeyhole, LogIn } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Suspense } from "react";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -142,5 +143,21 @@ export default function LoginPage() {
         </p>
       </Card>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center px-4 py-10">
+          <Card className="w-full max-w-md p-6 sm:p-8">
+            <p className="text-sm text-muted">Loading sign-in...</p>
+          </Card>
+        </main>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }
