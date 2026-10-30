@@ -33,9 +33,11 @@ const pageInfo: Record<
 };
 
 export function AppShell({
-  children,
+  children, isAdmin, charityName,
 }: {
   children: React.ReactNode;
+  isAdmin: boolean;
+  charityName?: string;
 }) {
   const pathname = usePathname();
 
@@ -50,7 +52,7 @@ export function AppShell({
 
   return (
     <div className="min-h-screen bg-background lg:flex">
-      <AppSidebar />
+      <AppSidebar isAdmin={isAdmin} charityName={charityName} />
 
       <div className="flex min-h-screen flex-1 flex-col">
         <AppHeader

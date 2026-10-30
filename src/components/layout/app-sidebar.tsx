@@ -4,52 +4,48 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Baby,
   LayoutDashboard,
   ReceiptText,
   History,
   ChartNoAxesCombined,
   Settings,
   Users,
+  UserRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const navigation = [
-  {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Transactions",
-    href: "/record",
-    icon: ReceiptText,
-  },
-  {
-    label: "History",
-    href: "/history",
-    icon: History,
-  },
-  {
-    label: "Reports",
-    href: "/reports",
-    icon: ChartNoAxesCombined,
-  },
-  {
-    label: "Settings",
-    href: "/settings",
-    icon: Settings,
-  },
-  {
-    label: "User Management",
-    href: "/settings/users",
-    icon: Users,
-  },
-
-];
-
-export function AppSidebar() {
+export function AppSidebar({
+  isAdmin,
+  charityName,
+}: {
+  isAdmin: boolean;
+  charityName?: string;
+}) {
   const pathname = usePathname();
+
+  // main nav items
+  const navigation = [
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Transactions", href: "/record", icon: ReceiptText },
+  { label: "History", href: "/history", icon: History },
+  { label: "Reports", href: "/reports", icon: ChartNoAxesCombined },
+  { label: "Settings", href: "/settings", icon: Settings },
+  ...(isAdmin
+    ? [
+        {
+          label: "User Management",
+          href: "/settings/users",
+          icon: Users,
+        },
+      ]
+    : []),
+        {
+          label: "Profile",
+          href: "/profile",
+          icon: UserRound,
+        },
+      
+];
 
   return (
     <aside className="flex w-full flex-col border-b border-border bg-card p-4 lg:min-h-screen lg:w-64 lg:border-b-0 lg:border-r lg:p-5">
@@ -57,18 +53,12 @@ export function AppSidebar() {
         href="/dashboard"
         className="mb-6 flex items-center gap-3 rounded-lg p-2"
       >
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-sage-soft text-forest">
-          <Baby size={25} aria-hidden="true" />
-        </div>
-
-        <div>
-          <p className="font-bold text-forest">
-            Baby Bank Finance
-          </p>
-          <p className="text-xs text-muted">
-            Charity finance workspace
-          </p>
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/Baby-bank-app-logo.png"
+          alt={charityName || "Baby Bank Finance"}
+          className="h-auto w-full rounded-lg"
+        />
       </Link>
 
       <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted">
@@ -77,9 +67,15 @@ export function AppSidebar() {
 
       <nav aria-label="Main navigation" className="flex gap-2 overflow-x-auto lg:flex-col">
         {navigation.map((item) => {
+          const matches = (href: string) =>
+            pathname === href || pathname.startsWith(`${href}/`);
+          // Only the most specific matching item is active
           const isActive =
-            pathname === item.href ||
-            pathname.startsWith(`${item.href}/`);
+            matches(item.href) &&
+            !navigation.some(
+              (other) =>
+                other.href.length > item.href.length && matches(other.href),
+            );
 
           const Icon = item.icon;
 

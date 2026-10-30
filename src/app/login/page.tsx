@@ -51,6 +51,12 @@ function LoginForm() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <Card className="w-full max-w-md p-6 sm:p-8">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/Baby-bank-app-logo.png"
+          alt="Gloucester Baby Bank"
+          className="mb-6 h-auto w-full rounded-lg"
+        />
         <div className="mb-6 flex items-center gap-3">
           <div className="rounded-xl bg-sage-soft p-3 text-forest">
             <LockKeyhole size={26} aria-hidden="true" />

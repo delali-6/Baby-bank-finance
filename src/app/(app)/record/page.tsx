@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import {
   ArrowDownLeft,
@@ -37,6 +37,7 @@ export default function RecordTransactionPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,13 +81,17 @@ export default function RecordTransactionPage() {
     setMessage("");
     setMessageType("");
 
-    const numericAmount = Number(amount);
+    if (savingRef.current) return;
 
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      setMessage("Enter an amount greater than £0.00.");
+    const trimmedAmount = amount.trim();
+
+    if (!/^\d+(\.\d{1,2})?$/.test(trimmedAmount) || Number(trimmedAmount) <= 0) {
+      setMessage("Enter an amount greater than £0.00, with no more than 2 decimal places.");
       setMessageType("error");
       return;
     }
+
+    const numericAmount = Math.round(Number(trimmedAmount) * 100) / 100;
 
     if (!category || !categories.some((item) => item.id === category)) {
       setMessage("Please select an active category.");
@@ -100,6 +105,15 @@ export default function RecordTransactionPage() {
       return;
     }
 
+    if (!navigator.onLine) {
+      setMessage(
+        "You appear to be offline. Your transaction has not been saved. Please check your connection and try again."
+      );
+      setMessageType("error");
+      return;
+    }
+
+    savingRef.current = true;
     setSaving(true);
 
     try {
@@ -129,7 +143,9 @@ export default function RecordTransactionPage() {
       if (error) {
         console.error("Transaction save failed:", error);
         setMessage(
-          "The transaction could not be saved. Check your access and entries, then try again."
+          /fetch|network|timeout/i.test(error.message ?? "")
+            ? "Your transaction couldn't be saved. Please check your connection and try again."
+            : "The transaction could not be saved. Check your access and entries, then try again."
         );
         setMessageType("error");
         return;
@@ -143,9 +159,12 @@ export default function RecordTransactionPage() {
       setReference("");
     } catch (error) {
       console.error("Unexpected transaction save error:", error);
-      setMessage("Something went wrong. Please try again.");
+      setMessage(
+        "Your transaction couldn't be saved. Please check your connection and try again."
+      );
       setMessageType("error");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }

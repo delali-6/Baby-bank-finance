@@ -1,88 +1,123 @@
-
-import {
-  Building2,
-  ShieldCheck,
-  Users,
-  ClipboardList,
-  Info,
-} from "lucide-react";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Building2, Users, UserRound, Info } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { createClient } from "@/lib/supabase/server";
+import { OrganisationSettingsForm } from "./organisation-settings-form";
 
-const settingsSections = [
-  {
-    title: "Charity information",
-    description:
-      "Organisation details and financial record-keeping preferences.",
-    icon: Building2,
-    status: "Configuration not yet available",
-  },
-  {
-    title: "User access",
-    description:
-      "Approved users, staff roles and access permissions.",
-    icon: Users,
-    status: "User management to be connected",
-  },
-  {
-    title: "Security",
-    description:
-      "Account access and security-related settings.",
-    icon: ShieldCheck,
-    status: "Security settings to be connected",
-  },
-  {
-    title: "Audit history",
-    description:
-      "Review a traceable history of changes to financial records.",
-    icon: ClipboardList,
-    status: "Audit log to be connected",
-  },
-];
+export default async function SettingsPage() {
+  const supabase = await createClient();
 
-export default function SettingsPage() {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    redirect("/login");
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role, is_active")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profileError || !profile || !profile.is_active) {
+    redirect("/pending-approval");
+  }
+
+  const isAdmin = profile.role === "admin";
+
+  const { data: settings, error: settingsError } = await supabase
+    .from("organisation_settings")
+    .select("charity_name, currency, timezone, week_start_day")
+    .eq("id", 1)
+    .maybeSingle();
+
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
         title="Settings"
-        description="Manage your charity's finance workspace and access configuration."
+        description="View your charity's information and manage workspace preferences."
       />
 
-      <div className="mb-6 flex items-start gap-3 rounded-lg border border-border bg-surface p-4">
+      <div className="flex items-start gap-3 rounded-lg border border-border bg-surface p-4">
         <Info
           size={21}
           className="mt-0.5 shrink-0 text-forest"
           aria-hidden="true"
         />
         <p className="text-sm text-ink">
-          These settings are currently a preview. Changes to users,
-          permissions and organisation details are not available here yet.
+          {isAdmin
+            ? "You can update the charity information below. Changes are recorded by the database audit trigger."
+            : "You can view your charity's current information. Only an active administrator can change these settings."}
         </p>
       </div>
 
-      <section
-        aria-label="Settings sections"
-        className="grid gap-4 md:grid-cols-2"
-      >
-        {settingsSections.map(
-          ({ title, description, icon: Icon, status }) => (
-            <Card key={title}>
-              <div className="flex items-start gap-4">
-                <div className="rounded-xl bg-sage-soft p-3 text-forest">
-                  <Icon size={24} aria-hidden="true" />
-                </div>
+      {settingsError || !settings ? (
+        <Card>
+          <h2 className="font-bold">Charity settings unavailable</h2>
+          <p className="mt-2 text-sm text-muted">
+            We couldn&apos;t load the organisation settings. Please refresh the
+            page or contact an administrator.
+          </p>
+        </Card>
+      ) : (
+        <OrganisationSettingsForm
+          settings={{
+            charity_name: settings.charity_name ?? "",
+            currency: settings.currency.trim(),
+            timezone: settings.timezone,
+            week_start_day: settings.week_start_day,
+          }}
+          canEdit={isAdmin}
+        />
+      )}
 
-                <div className="min-w-0">
-                  <h2 className="text-lg font-bold">{title}</h2>
-                  <p className="mt-2 text-muted">{description}</p>
-                  <p className="mt-4 text-sm font-medium text-muted">
-                    {status}
-                  </p>
-                </div>
+      <section aria-label="Account and access" className="grid gap-4 md:grid-cols-2">
+        {isAdmin && (
+          <Card>
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-sage-soft p-3 text-forest">
+                <Users size={24} aria-hidden="true" />
               </div>
-            </Card>
-          )
+              <div>
+                <h2 className="text-lg font-bold">User management</h2>
+                <p className="mt-2 text-sm text-muted">
+                  Approve users and manage staff access.
+                </p>
+                <Link
+                  href="/settings/users"
+                  className="mt-4 inline-block font-semibold text-forest underline underline-offset-4"
+                >
+                  Manage users
+                </Link>
+              </div>
+            </div>
+          </Card>
         )}
+
+        <Card>
+          <div className="flex items-start gap-3">
+            <div className="rounded-xl bg-sage-soft p-3 text-forest">
+              <UserRound size={24} aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold">Your profile</h2>
+              <p className="mt-2 text-sm text-muted">
+                View your account information and access status.
+              </p>
+              <Link
+                href="/profile"
+                className="mt-4 inline-block font-semibold text-forest underline underline-offset-4"
+              >
+                View profile
+              </Link>
+            </div>
+          </div>
+        </Card>
       </section>
     </div>
   );

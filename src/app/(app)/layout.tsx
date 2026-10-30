@@ -22,7 +22,7 @@ export default async function AppLayout({
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("is_active")
+    .select("is_active, role")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -30,5 +30,18 @@ export default async function AppLayout({
     redirect("/pending-approval");
   }
 
-  return <AppShell>{children}</AppShell>;
+  const { data: settings } = await supabase
+    .from("organisation_settings")
+    .select("charity_name")
+    .eq("id", 1)
+    .maybeSingle();
+
+  return (
+    <AppShell
+      isAdmin={profile.role === "admin"}
+      charityName={settings?.charity_name ?? undefined}
+    >
+      {children}
+    </AppShell>
+  );
 }
