@@ -265,6 +265,9 @@ export default function RecordTransactionPage() {
                 placeholder="0.00"
                 className="min-h-12 w-full rounded-lg border border-border bg-card px-3"
               />
+              <p className="mt-2 text-xs text-muted">
+                Enter the amount in pounds, using up to two decimal places.
+              </p>
             </div>
           </div>
 
@@ -290,8 +293,9 @@ export default function RecordTransactionPage() {
               ))}
             </select>
             {!categoriesLoading && categories.length === 0 && (
-              <p className="mt-2 text-sm text-ink">
+              <p className="mt-2 text-sm text-muted">
                 No active categories are available for this transaction type.
+                Please contact an administrator for assistance.
               </p>
             )}
           </div>
@@ -330,8 +334,8 @@ export default function RecordTransactionPage() {
 
           {message && (
             <p
-              role="status"
-              aria-live="polite"
+              role={messageType === "error" ? "alert" : "status"}
+              aria-live={messageType === "error" ? "assertive" : "polite"}
               className={`rounded-lg p-4 text-sm ${
                 messageType === "success"
                   ? "bg-sage-soft text-forest"

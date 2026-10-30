@@ -1,6 +1,6 @@
 
 import { redirect } from "next/navigation";
-import { UserRound, ShieldCheck, Mail, LogOut } from "lucide-react";
+import { UserRound, ShieldCheck, BadgeCheck, Mail, LogOut } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/app/auth/actions";
@@ -84,6 +84,18 @@ export default async function ProfilePage() {
             <div>
               <p className="text-sm text-muted">Account role</p>
               <p className="font-medium text-ink">{roleLabel}</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <BadgeCheck
+              size={20}
+              className="mt-0.5 shrink-0 text-muted"
+              aria-hidden="true"
+            />
+            <div>
+              <p className="text-sm text-muted">Access status</p>
+              <p className="font-medium text-ink">Approved and active</p>
             </div>
           </div>
         </div>

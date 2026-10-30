@@ -30,6 +30,18 @@ const pageInfo: Record<
     title: "Settings",
     description: "Manage your charity workspace.",
   },
+    "/profile": {
+    title: "My Profile",
+    description: "View your account information.",
+  },
+  "/settings/users": {
+    title: "User Management",
+    description: "Manage staff access to your charity workspace.",
+  },
+  "/audit-log": {
+    title: "Audit Log",
+    description: "Review administrative and financial activity.",
+  },
 };
 
 export function AppShell({
@@ -55,10 +67,7 @@ export function AppShell({
       <AppSidebar isAdmin={isAdmin} charityName={charityName} />
 
       <div className="flex min-h-screen flex-1 flex-col">
-        <AppHeader
-          title={current.title}
-          description={current.description}
-        />
+        
 
         <main className="flex-1 px-5 py-6 sm:px-8">
           {children}

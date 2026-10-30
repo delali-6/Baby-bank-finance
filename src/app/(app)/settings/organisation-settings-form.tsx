@@ -139,7 +139,7 @@ export function OrganisationSettingsForm({
 
         {state.message && (
           <p
-            role="status"
+            role={state.success ? "status" : "alert"}
             className={`rounded-lg border p-3 text-sm ${
               state.success
                 ? "border-border bg-surface text-ink"

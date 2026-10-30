@@ -88,13 +88,17 @@ export default async function DashboardPage({
   const transactions = data ?? [];
 
   // Keep the existing lifetime financial totals.
-  const income = transactions
-    .filter((item) => item.type === "income")
-    .reduce((sum, item) => sum + Number(item.amount), 0);
+  const income = error
+  ? 0
+  : transactions
+      .filter((item) => item.type === "income")
+      .reduce((sum, item) => sum + Number(item.amount), 0);
 
-  const expenditure = transactions
-    .filter((item) => item.type === "expenditure")
-    .reduce((sum, item) => sum + Number(item.amount), 0);
+  const expenditure = error
+    ? 0
+    : transactions
+        .filter((item) => item.type === "expenditure")
+        .reduce((sum, item) => sum + Number(item.amount), 0);
 
   const balance = income - expenditure;
 
@@ -118,19 +122,19 @@ export default async function DashboardPage({
   const summaryCards = [
     {
       title: "Total income",
-      amount: formatGBP(income),
+      amount: error ? "—" : formatGBP(income),
       note: "From recorded transactions",
       icon: ArrowDownLeft,
     },
     {
       title: "Total expenditure",
-      amount: formatGBP(expenditure),
+      amount: error ? "—" : formatGBP(expenditure),
       note: "From recorded transactions",
       icon: ArrowUpRight,
     },
     {
       title: "Current balance",
-      amount: formatGBP(balance),
+      amount: error ? "—" : formatGBP(balance),
       note: "Income minus expenditure",
       icon: Wallet,
     },
@@ -192,7 +196,17 @@ export default async function DashboardPage({
           </Link>
         }
       />
-
+      {/* Error message */}
+      {error && (
+        <p
+          role="alert"
+          className="mb-4 rounded-lg bg-warning-soft p-4 text-sm"
+        >
+          Financial information could not be loaded. Please refresh the page
+          and try again.
+        </p>
+      )}
+      {/* End error message */}
       <section
         aria-label="Lifetime financial summary"
         className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
@@ -202,7 +216,13 @@ export default async function DashboardPage({
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-medium text-muted">{title}</p>
-                <p className="mt-3 break-words text-2xl font-bold tracking-tight text-forest sm:text-3xl">
+                <p
+                  className={`mt-3 break-words text-2xl font-bold tracking-tight sm:text-3xl ${
+                    title === "Current balance" && balance < 0
+                      ? "text-danger"
+                      : "text-forest"
+                  }`}
+                >
                   {amount}
                 </p>
                 <p className="mt-2 text-sm text-muted">{note}</p>
@@ -407,8 +427,10 @@ export default async function DashboardPage({
           </div>
         </Card>
 
-        <Card>
-          <h2 className="text-lg font-bold">Quick actions</h2>
+        <Card aria-labelledby="quick-actions-heading">
+          <h2 id="quick-actions-heading" className="text-lg font-bold">
+            Quick actions
+          </h2>
           <p className="mt-1 text-sm text-muted">
             Common tasks to help you manage your records.
           </p>

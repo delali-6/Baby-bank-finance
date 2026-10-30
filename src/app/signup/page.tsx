@@ -3,6 +3,7 @@
 
 import { useState, type FormEvent } from "react";
 
+import Link from "next/link";
 import { UserPlus } from "lucide-react";
 import { signUp } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
@@ -172,12 +173,12 @@ export default function SignupPage() {
 
         <p className="mt-5 text-center text-sm text-muted">
           Already registered?{" "}
-          <a
+          <Link
             href="/login"
             className="font-semibold text-forest underline"
           >
             Sign in
-          </a>
+          </Link>
         </p>
       </Card>
     </main>

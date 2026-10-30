@@ -73,7 +73,10 @@ function TransactionTable({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
+      <table className="w-full table-auto text-left text-sm">
+        <caption className="sr-only">
+          Transaction history, including dates, categories, descriptions, status and amounts.
+        </caption>
         <thead>
           <tr className="border-b border-border text-muted">
             <th className="px-3 py-3 font-medium">Date</th>
@@ -103,13 +106,13 @@ function TransactionTable({
               <td className="px-3 py-4">
                 {getCategoryName(record.category)}
               </td>
-              <td className="px-3 py-4">
+              <td className="max-w-xs break-words px-3 py-4">
                 {record.description || "—"}
               </td>
-              <td className="px-3 py-4">
+              <td className="max-w-40 break-words px-3 py-4">
                 {record.reference ?? "—"}
               </td>
-              <td className="min-w-48 px-3 py-4">
+              <td className="w-px min-w-28 max-w-56 px-3 py-4">
                 {record.deleted_at ? (
                   <div className="space-y-2">
                     <span className="inline-flex rounded-full bg-danger/10 px-2.5 py-1 text-xs font-semibold text-danger">
@@ -207,6 +210,13 @@ export default async function HistoryPage({
     transactionsQuery = transactionsQuery.is("deleted_at", null);
   }
 
+  if (query) {
+    transactionsQuery = transactionsQuery.ilike(
+      "description",
+      `%${query}%`
+    );
+  }
+
   const { data: transactions, error } = await transactionsQuery;
 
   if (error) {
@@ -296,7 +306,9 @@ export default async function HistoryPage({
                 {groupedByWeek ? "Transactions by week" : "All transactions"}
               </h2>
               <p className="mt-1 text-sm text-muted">
-                {records.length} transaction{records.length === 1 ? "" : "s"} found
+                {error
+                  ? "Transaction count unavailable"
+                  : `${records.length} transaction${records.length === 1 ? "" : "s"} found`}
               </p>
             </div>
 

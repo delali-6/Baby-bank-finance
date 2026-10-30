@@ -142,10 +142,15 @@ function LoginForm() {
           </Button>
         </form>
 
-        <p className="mt-5 text-xs text-muted">
-          Access is intended for authorised charity users. User-approval
-          enforcement still needs to be completed before the app is ready
-          for real financial records.
+        <p className="mt-5 text-center text-sm text-muted">
+          New here?{" "}
+          <Link href="/signup" className="font-semibold text-forest underline">
+            Create an account
+          </Link>
+        </p>
+        <p className="mt-3 text-xs text-muted">
+          Access is restricted to authorised charity users and requires
+          administrator approval.
         </p>
       </Card>
     </main>
