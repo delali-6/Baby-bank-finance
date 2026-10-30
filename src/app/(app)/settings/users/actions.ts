@@ -58,26 +58,34 @@ export async function updateUserAccess(formData: FormData) {
     throw new Error("The selected user could not be found.");
   }
 
-  // Protect the last active administrator from accidental deactivation.
-  if (
-    target.role === "admin" &&
-    target.is_active &&
-    activeValue === "false"
-  ) {
-    throw new Error("Administrator access cannot be changed here.");
+  if (target.role !== "staff") {
+    throw new Error(
+      "Administrator accounts must be managed separately."
+    );
+  }
+
+  const requestedActive = activeValue === "true";
+
+  if (target.is_active === requestedActive) {
+    throw new Error("This user's access has already been updated.");
   }
 
   const { error: updateError } = await supabase
     .from("profiles")
-    .update({ is_active: activeValue === "true" })
-    .eq("id", profileId);
+    .update({ is_active: requestedActive })
+    .eq("id", profileId)
+    .eq("role", "staff")
+    .eq("is_active", !requestedActive);
 
   if (updateError) {
+    console.error("User access update failed:", updateError);
+
     throw new Error(
-      "The change could not be saved. Check your database permissions."
+      "The change could not be saved. Please try again."
     );
   }
 
   revalidatePath("/settings/users");
   revalidatePath("/pending-approval");
+  revalidatePath("/dashboard");
 }

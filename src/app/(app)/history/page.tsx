@@ -7,6 +7,7 @@ import { getFinancialWeek } from "@/lib/financial-week";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
+import { TransactionActions } from "./transaction-actions";
 
 type SearchParams = Promise<{
   q?: string;
@@ -25,6 +26,9 @@ type TransactionRecord = {
     | { name: string }
     | { name: string }[]
     | null;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  deletion_reason: string | null;
 };
 
 function formatMoney(amount: number, currency: string | null) {
@@ -62,8 +66,10 @@ function getCategoryName(
 
 function TransactionTable({
   records,
+  isAdmin,
 }: {
   records: TransactionRecord[];
+  isAdmin: boolean;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -75,7 +81,13 @@ function TransactionTable({
             <th className="px-3 py-3 font-medium">Category</th>
             <th className="px-3 py-3 font-medium">Description</th>
             <th className="px-3 py-3 font-medium">Reference</th>
+            <th className="px-3 py-3 font-medium">Status</th>
             <th className="px-3 py-3 text-right font-medium">Amount</th>
+            {isAdmin && (
+              <th className="px-3 py-3 text-right font-medium">
+                Actions
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -97,9 +109,48 @@ function TransactionTable({
               <td className="px-3 py-4">
                 {record.reference ?? "—"}
               </td>
+              <td className="min-w-48 px-3 py-4">
+                {record.deleted_at ? (
+                  <div className="space-y-2">
+                    <span className="inline-flex rounded-full bg-danger/10 px-2.5 py-1 text-xs font-semibold text-danger">
+                      Voided
+                    </span>
+
+                    {isAdmin && (
+                      <div className="space-y-1 text-xs text-muted">
+                        <p>
+                          <span className="font-semibold">Voided on:</span>{" "}
+                          {new Date(record.deleted_at).toLocaleString("en-GB", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                            timeZone: "Europe/London",
+                          })}
+                        </p>
+
+                        <p className="whitespace-normal">
+                          <span className="font-semibold">Reason:</span>{" "}
+                          {record.deletion_reason || "No reason recorded"}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <span className="inline-flex rounded-full bg-sage-soft px-2.5 py-1 text-xs font-semibold text-forest">
+                    Active
+                  </span>
+                )}
+              </td>
               <td className="whitespace-nowrap px-3 py-4 text-right font-medium">
                 {formatMoney(Number(record.amount), record.currency)}
               </td>
+              {isAdmin && (
+                <td className="px-3 py-4 text-right">
+                  <TransactionActions
+                    transactionId={record.id}
+                    isVoided={!!record.deleted_at}
+                  />
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -126,6 +177,15 @@ export default async function HistoryPage({
 
   if (authError || !user) redirect("/login");
 
+  const { data: profile } = await supabase
+  .from("profiles")
+  .select("role, is_active")
+  .eq("id", user.id)
+  .maybeSingle();
+
+  const isAdmin =
+  profile?.role === "admin" && profile?.is_active === true;
+
   const { data: settings } = await supabase
     .from("organisation_settings")
     .select("week_start_day, timezone")
@@ -136,23 +196,15 @@ export default async function HistoryPage({
   const timezone = settings?.timezone ?? "Europe/London";
 
   let transactionsQuery = supabase
-    .from("transactions")
-    .select(
-      "id, type, amount, currency, transaction_date, description, reference, category:categories(name)"
-    )
-    .is("deleted_at", null)
-    .order("transaction_date", { ascending: false })
-    .order("created_at", { ascending: false });
+  .from("transactions")
+  .select(
+    "id, type, amount, currency, transaction_date, description, reference, deleted_at, deleted_by, deletion_reason, category:categories(name)"
+  )
+  .order("transaction_date", { ascending: false })
+  .order("created_at", { ascending: false });
 
-  if (query) {
-    const safeQuery = query.replace(/[,%()]/g, " ").trim();
-
-    if (safeQuery) {
-      transactionsQuery = transactionsQuery.ilike(
-        "description",
-        `%${safeQuery}%`
-      );
-    }
+  if (!isAdmin) {
+    transactionsQuery = transactionsQuery.is("deleted_at", null);
   }
 
   const { data: transactions, error } = await transactionsQuery;
@@ -199,10 +251,12 @@ export default async function HistoryPage({
 
       group.records.push(record);
 
-      if (record.type === "income") {
-        group.income += Number(record.amount);
-      } else if (record.type === "expenditure") {
-        group.expenditure += Number(record.amount);
+      if (!record.deleted_at) {
+        if (record.type === "income") {
+          group.income += Number(record.amount);
+        } else if (record.type === "expenditure") {
+          group.expenditure += Number(record.amount);
+        }
       }
     }
   }
@@ -366,14 +420,20 @@ export default async function HistoryPage({
                     </div>
                   </div>
 
-                  <TransactionTable records={group.records} />
+                  <TransactionTable
+                    records={group.records}
+                    isAdmin={isAdmin}
+                  />
                 </section>
               );
             })}
           </div>
         ) : (
           <div className="mt-6">
-            <TransactionTable records={records} />
+            <TransactionTable
+              records={records}
+              isAdmin={isAdmin}
+            />
           </div>
         )}
       </Card>

@@ -157,7 +157,13 @@ export default async function UserManagementPage() {
                     </td>
                     <td className="px-3 py-4">
                       {profile.id === user.id ? (
-                        <span className="text-muted">Your account</span>
+                        <span className="text-sm text-gray-500">
+                          Your account
+                        </span>
+                      ) : profile.role === "admin" ? (
+                        <span className="text-sm text-gray-500">
+                          Administrator account
+                        </span>
                       ) : (
                         <form action={updateUserAccess}>
                           <input
@@ -168,11 +174,11 @@ export default async function UserManagementPage() {
                           <input
                             type="hidden"
                             name="active"
-                            value={String(!profile.is_active)}
+                            value={profile.is_active ? "false" : "true"}
                           />
                           <button
                             type="submit"
-                            className="min-h-11 rounded-lg border border-border px-3 py-2 font-semibold text-forest hover:bg-surface"
+                            className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
                           >
                             {profile.is_active ? "Deactivate" : "Approve"}
                           </button>

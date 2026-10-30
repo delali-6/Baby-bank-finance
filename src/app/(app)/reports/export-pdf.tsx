@@ -126,7 +126,9 @@ export default function ExportPDF({
     });
 
     // Weekly financial summaries
-    let currentY = (pdf as any).lastAutoTable.finalY + 12;
+    let currentY =
+      (pdf as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable
+        .finalY + 12;
 
     pdf.setFontSize(12);
     pdf.text("Weekly financial summaries", 14, currentY);
@@ -154,7 +156,9 @@ export default function ExportPDF({
     });
 
     // Monthly financial summaries
-    currentY = (pdf as any).lastAutoTable.finalY + 12;
+    currentY =
+      (pdf as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable
+        .finalY + 12;
 
     pdf.setFontSize(12);
     pdf.text("Monthly income and expenditure", 14, currentY);
@@ -180,7 +184,9 @@ export default function ExportPDF({
     });
 
     // Detailed transaction records
-    currentY = (pdf as any).lastAutoTable.finalY + 12;
+    currentY =
+      (pdf as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable
+        .finalY + 12;
 
     pdf.setFontSize(12);
     pdf.text("Detailed transaction records", 14, currentY);

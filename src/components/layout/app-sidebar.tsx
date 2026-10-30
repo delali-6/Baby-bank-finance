@@ -11,6 +11,7 @@ import {
   Settings,
   Users,
   UserRound,
+  FileClock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,7 @@ export function AppSidebar({
   { label: "History", href: "/history", icon: History },
   { label: "Reports", href: "/reports", icon: ChartNoAxesCombined },
   { label: "Settings", href: "/settings", icon: Settings },
+
   ...(isAdmin
     ? [
         {
@@ -37,14 +39,15 @@ export function AppSidebar({
           href: "/settings/users",
           icon: Users,
         },
+        {
+          label: "Audit Log",
+          href: "/audit-log",
+          icon: FileClock,
+        },
       ]
     : []),
-        {
-          label: "Profile",
-          href: "/profile",
-          icon: UserRound,
-        },
-      
+
+  { label: "Profile", href: "/profile", icon: UserRound },
 ];
 
   return (

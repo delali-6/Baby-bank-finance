@@ -320,7 +320,7 @@ export default function RecordTransactionPage() {
             <input
               id="transaction-reference"
               type="text"
-              maxLength={100}
+              maxLength={60}
               value={reference}
               onChange={(event) => setReference(event.target.value)}
               placeholder="e.g. receipt or internal reference"
