@@ -1,5 +1,11 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## User guide
+
+See the [Baby Bank Finance User Guide](./docs/USER-GUIDE.md) for instructions
+on signing in, registering, recording transactions, viewing reports, and
+administrator tasks.
+
 ## Getting Started
 
 First, run the development server:
